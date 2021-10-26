@@ -1,6 +1,8 @@
 {
-  "type":"module",
+  "type": "module",
   "dependencies": {
+    "argon2": "^0.28.2",
+    "bcrypt": "^5.0.1",
     "prompt-sync": "^4.2.0"
   }
 }

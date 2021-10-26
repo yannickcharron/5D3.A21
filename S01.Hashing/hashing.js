@@ -39,8 +39,28 @@ const motDePasse = PasswordHelper.pbkdf2('KiwiLeChat', salt);
 
 console.log(motDePasse);
 
-const pbkdf2Verify = PasswordHelper.pbkdf2Verify(motDePasse.hash, motDePasse.salt, 'KiwiLeChat');
+const pbkdf2Verify = await PasswordHelper.pbkdf2Verify(motDePasse.hash, motDePasse.salt, 'KiwiLeChat');
 console.log(pbkdf2Verify);
+
+
+//BCrypt
+console.log('BCrypt');
+const motDePasseBCrypt = await PasswordHelper.bcrypt('KiwiLeChat');
+console.log(motDePasseBCrypt);
+
+const bcryptVerify =  await PasswordHelper.bcryptVerify(motDePasseBCrypt, 'KiwiLeChat');
+console.log(bcryptVerify);
+
+
+console.log('Argon2');
+
+const motDePasseArgon = await PasswordHelper.argon2('KiwiLeChat');
+console.log(motDePasseArgon);
+
+const argonVerify =  await PasswordHelper.argonVerify(motDePasseArgon, 'KiwiLeChat');
+console.log(argonVerify);
+
+//https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
 
 // function simple(toHash) {
 //     return toHash.length % 10;
