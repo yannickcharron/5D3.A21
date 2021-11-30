@@ -19,13 +19,40 @@ app.get('/.well-knows/public.key', (req, res, next) => {
     res.status(200).json(publicKeyPEM);
 });
 
-app.post('/receive', (req, res, next) => {
+app.post('/receive', async (req, res, next) => {
 
+    try {
+
+    
     const message = req.body;
 
-    const decryptedText = crypto.privateDecrypt(privateKey, Buffer.from(message.text, 'base64'))
-    console.log(chalk.green(decryptedText.toString()));
-    res.status(200).end();
+    //Trouver la clé publique du sender
+    const senderPublicKeyResponse = await axios.get(`${message.from}:5000/.well-knows/public.key`);
+    if(senderPublicKeyResponse.status === 200) {
+        const decryptedText = crypto.privateDecrypt(privateKey, Buffer.from(message.text, 'base64'))
+        const isVerify = crypto.verify('sha256', Buffer.from(decryptedText), {
+            key: senderPublicKeyResponse.data,
+            padding: crypto.constants.RSA_PKCS1_PADDING
+        }, Buffer.from(message.sign, 'base64'));
+
+        if(isVerify) {
+            console.log(chalk.green(`${message.from} - ${decryptedText.toString()}`));
+            res.status(200).end();
+        } else {
+            console.log(chalk.red(decryptedText.toString()));
+            res.status(204).end();
+        }
+
+    } else {
+        console.log('Cannot get public key');
+        res.status(404).end();
+    }
+    }  catch(err) {
+        console.log(err);
+        res.status(500).end();
+    }
+
+
 });
 
 app.post('/send', async (req, res, next) => {
@@ -42,16 +69,20 @@ app.post('/send', async (req, res, next) => {
     if(toPublicKeyResponse.status === 200) {
         const toPublicKey = toPublicKeyResponse.data;
         const toSend = {};
-        toSend.from = '192.168.135.23';
+        toSend.from = 'http://192.168.135.23';
         toSend.fromName = 'Yannick';
         toSend.text = crypto.publicEncrypt(toPublicKey, message.text).toString('base64');
+        toSend.sign = crypto.sign('sha256', Buffer.from(message.text), {
+            key: privateKey,
+            padding: crypto.constants.RSA_PKCS1_PADDING
+        }).toString('base64');
 
         const response = await axios.post(`${message.to}:5000/receive`, toSend);
         if(response.status === 200) {
-            console.log(JSON.stringify(toSend));
+            //console.log(JSON.stringify(toSend));
             res.status(200).end();
         } else {
-            console.log(response);
+            //console.log(response);
             res.status(500).end();
         }
 
